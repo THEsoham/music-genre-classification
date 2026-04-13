@@ -1,0 +1,26 @@
+# environments
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.pyc
+
+# datasets
+data/
+*.csv
+
+# audio files
+*.wav
+*.mp3
+
+# model weights
+weights/
+*.pth
+*.h5
+
+# checkpoints
+checkpoints/
+
+# misc
+.DS_Store
