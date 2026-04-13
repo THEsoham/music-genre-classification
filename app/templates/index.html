@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music Genre Classifier</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="light">
+
+<div class="main-wrapper">
+
+    <div class="main-card">
+
+        <!-- HEADER -->
+        <h1 class="title">🎵 Music Genre Classifier</h1>
+
+        <!-- UPLOAD -->
+        <div class="upload-box">
+            <input type="file" id="fileInput" accept=".wav">
+            <button onclick="upload()">Predict</button>
+        </div>
+
+        <!-- AUDIO -->
+        <div id="audioContainer" class="audio-player"></div>
+
+        <!-- LOADER -->
+        <div id="loader" class="loader hidden"></div>
+
+        <!-- WINNER -->
+        <div id="winner" class="winner"></div>
+
+        <!-- MODELS -->
+        <div class="models">
+
+            <div class="model-card">
+                <h2>CNN Model</h2>
+                <div id="cnn"></div>
+            </div>
+
+            <div class="model-card">
+                <h2>ResNet Model</h2>
+                <div id="resnet"></div>
+            </div>
+
+        </div>
+
+        <!-- 📊 CHART -->
+        <canvas id="comparisonChart"></canvas>
+
+    </div>
+
+</div>
+
+<script>
+// 🌙 Dark Mode
+function toggleMode() {
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
+}
+
+// 🚀 Upload
+async function upload() {
+    const file = document.getElementById("fileInput").files[0];
+
+    if (!file) {
+        alert("Select a file first");
+        return;
+    }
+
+    // 🎧 Audio preview
+    const url = URL.createObjectURL(file);
+    document.getElementById("audioContainer").innerHTML =
+        `<audio controls src="${url}"></audio>`;
+
+    // ⏳ Loader ON
+    document.getElementById("loader").classList.remove("hidden");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/predict", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    render("cnn", data.cnn);
+    render("resnet", data.resnet);
+
+    showWinner(data);
+    showChart(data);
+
+    // ⏳ Loader OFF
+    document.getElementById("loader").classList.add("hidden");
+}
+
+// 🧠 Confidence
+function getConfidence(prob) {
+    if (prob > 0.75) return ["High", "high"];
+    if (prob > 0.4) return ["Medium", "medium"];
+    return ["Low", "low"];
+}
+
+// 📊 Render bars
+function render(id, modelData) {
+    const topProb = modelData.probabilities[modelData.prediction];
+    const [confText, confClass] = getConfidence(topProb);
+
+    let html = `
+        <div class="prediction">
+            ${modelData.prediction.toUpperCase()}
+            <span class="badge ${confClass}">${confText}</span>
+        </div>
+    `;
+
+    const sorted = Object.entries(modelData.probabilities)
+        .sort((a, b) => b[1] - a[1]);
+
+    for (const [genre, prob] of sorted) {
+        const percent = (prob * 100).toFixed(1);
+
+        html += `
+            <div class="bar-container">
+                <div class="label">${genre.toUpperCase()} (${percent}%)</div>
+                <div class="bar" style="width:${percent}%"></div>
+            </div>
+        `;
+    }
+
+    document.getElementById(id).innerHTML = html;
+}
+
+// 🏆 Winner
+function showWinner(data) {
+    const cnnProb = data.cnn.probabilities[data.cnn.prediction];
+    const resProb = data.resnet.probabilities[data.resnet.prediction];
+
+    let winner = cnnProb > resProb
+        ? "🏆 CNN is more confident"
+        : "🏆 ResNet is more confident";
+
+    document.getElementById("winner").innerText = winner;
+}
+
+// 📊 Chart
+function showChart(data) {
+    const ctx = document.getElementById("comparisonChart");
+
+    const cnnProb = data.cnn.probabilities[data.cnn.prediction];
+    const resProb = data.resnet.probabilities[data.resnet.prediction];
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['CNN', 'ResNet'],
+            datasets: [{
+            label: 'Confidence',
+            data: [cnnProb, resProb],
+            backgroundColor: ['rgba(0, 198, 255, 0.7)', 'rgba(255, 126, 179, 0.7)'],
+            borderColor: ['#ff5900', '#ff7eb3'],
+            borderWidth: 2
+        }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, max: 1 }
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
