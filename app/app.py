@@ -1,6 +1,19 @@
+# -----------------------------
+# FIX IMPORT PATH (ADD THIS FIRST)
+# -----------------------------
+import sys
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Add project root to Python path
+sys.path.append(os.path.join(BASE_DIR, ".."))
+
+# -----------------------------
+# NOW IMPORT LIBRARIES
+# -----------------------------
 from flask import Flask, request, jsonify, render_template
 import torch
-import os
 
 # CNN
 from src.models.cnn import AudioCNN
@@ -10,6 +23,9 @@ from src.predict.cnn_predict import predict_cnn
 from src.models.resnet18 import get_resnet_model
 from src.predict.resnet_predict import predict_resnet
 
+# -----------------------------
+# FLASK APP
+# -----------------------------
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # -----------------------------
