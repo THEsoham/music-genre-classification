@@ -5,7 +5,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     build-essential \
     gfortran \
-    libatlas-base-dev \
     libsndfile1 \
     ffmpeg \
     && apt-get clean
